@@ -1,9 +1,5 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
 // 合并 Tailwind CSS 类名
-export function cn(...inputs: ClassValue[]): string {
-  // 简单版 cn，不引入 clsx/tailwind-merge 依赖
+export function cn(...inputs: (string | false | null | undefined)[]): string {
   return inputs.filter(Boolean).join(" ");
 }
 
