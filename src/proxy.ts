@@ -1,9 +1,35 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
-export const proxy = auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const pathname = req.nextUrl.pathname;
+function getSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET is required in production");
+    }
+    return new TextEncoder().encode("dev-secret-change-me");
+  }
+  return new TextEncoder().encode(secret);
+}
+const COOKIE_NAME = "session_token";
+
+async function getTokenFromCookie(
+  request: NextRequest,
+): Promise<{ userId: string; role: string } | null> {
+  const token = request.cookies.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    return payload as unknown as { userId: string; role: string };
+  } catch {
+    return null;
+  }
+}
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const token = await getTokenFromCookie(request);
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isProtectedRoute =
@@ -13,27 +39,27 @@ export const proxy = auth((req) => {
     pathname.startsWith("/api/cart") ||
     pathname.startsWith("/api/orders");
 
-  // 后台仅管理员可访问
+  // 后台路由：需登录 + ADMIN 角色
   if (isAdminRoute) {
-    if (!isLoggedIn) {
-      const loginUrl = new URL("/auth/login", req.url);
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
-    if (req.auth?.user?.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/", req.url));
+    if (token.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
-  // 受保护路由需登录
-  if (isProtectedRoute && !isLoggedIn) {
-    const loginUrl = new URL("/auth/login", req.url);
+  // 受保护路由：需登录
+  if (isProtectedRoute && !token) {
+    const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

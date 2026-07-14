@@ -14,7 +14,7 @@ export function Header() {
             商品
           </NavLink>
           <NavLink href="/cart">购物车</NavLink>
-          <NavLink href="/auth/login" activeMatch="/auth">
+          <NavLink href="/login" activeMatch="/login">
             登录
           </NavLink>
         </nav>
