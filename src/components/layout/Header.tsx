@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NavLink } from "./NavLink";
+import { UserMenu } from "./UserMenu";
 
 export function Header() {
   return (
@@ -14,9 +15,7 @@ export function Header() {
             商品
           </NavLink>
           <NavLink href="/cart">购物车</NavLink>
-          <NavLink href="/login" activeMatch="/login">
-            登录
-          </NavLink>
+          <UserMenu />
         </nav>
       </div>
     </header>

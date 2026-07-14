@@ -21,10 +21,20 @@ export function checkTierUpgrade(totalSpent: number, currentTier: string): strin
     }
   }
 
-  // 等级排序（只升不降）
-  const tierOrder: MembershipTierKey[] = ["FREE", "XINYUE_1", "XINYUE_2", "XINYUE_3"];
-  const currentIndex = tierOrder.indexOf(currentTier as MembershipTierKey);
-  const newIndex = tierOrder.indexOf(highestTier);
+  // 按门槛从低到高排序（只升不降）
+  const tierOrder = (
+    Object.entries(MEMBERSHIP_TIERS) as [
+      MembershipTierKey,
+      (typeof MEMBERSHIP_TIERS)[MembershipTierKey],
+    ][]
+  ).sort((a, b) => a[1].threshold - b[1].threshold);
+
+  const currentIndex = tierOrder.findIndex(
+    ([key]) => key === (currentTier as MembershipTierKey),
+  );
+  const newIndex = tierOrder.findIndex(
+    ([key]) => key === highestTier,
+  );
 
   return newIndex > currentIndex ? highestTier : currentTier;
 }
@@ -39,12 +49,13 @@ export function calculateOrderAmount(
     0,
   );
   const discountRate = getMembershipDiscount(membershipTier);
-  const discountAmount = originalAmount * discountRate;
-  const totalAmount = originalAmount - discountAmount;
+  // 先计算实付总额再取整，保证 originalAmount = discountAmount + totalAmount
+  const totalAmount = Math.round((originalAmount * (1 - discountRate)) * 100) / 100;
+  const discountAmount = Math.round((originalAmount - totalAmount) * 100) / 100;
 
   return {
     originalAmount: Math.round(originalAmount * 100) / 100,
-    discountAmount: Math.round(discountAmount * 100) / 100,
-    totalAmount: Math.round(totalAmount * 100) / 100,
+    discountAmount,
+    totalAmount,
   };
 }
