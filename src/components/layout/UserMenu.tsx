@@ -16,6 +16,9 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-4">
+      {user.role === "ADMIN" && (
+        <NavLink href="/admin">后台</NavLink>
+      )}
       <NavLink href="/orders" activeMatch="/orders">
         我的订单
       </NavLink>

@@ -113,3 +113,11 @@ export async function clearSession(): Promise<void> {
     path: "/",
   });
 }
+
+// ---- 管理员校验 ----
+
+export async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "ADMIN") throw new Error("Unauthorized");
+  return user;
+}
