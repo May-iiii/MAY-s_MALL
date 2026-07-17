@@ -1,11 +1,13 @@
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-border bg-surface-secondary">
+    <footer className="mt-auto border-t border-stone-200/60 bg-stone-100/50">
       <div className="page-container py-8">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <div>
-            <p className="text-sm font-bold text-primary">MAY{"'"}s Mall</p>
-            <p className="mt-1 text-xs text-text-muted">您的精品购物平台</p>
+            <p className="font-[family-name:var(--font-display)] text-xl text-stone-700">
+              MAY{"'"}s Mall
+            </p>
+            <p className="mt-1 text-xs text-stone-500">您的精品购物平台</p>
           </div>
           <div className="flex gap-8">
             <div>

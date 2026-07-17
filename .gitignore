@@ -49,3 +49,6 @@ next-env.d.ts
 /prisma/dev.db-*
 
 /src/generated/prisma
+
+# temp directories
+.claudeskillstaste-skill-temp/

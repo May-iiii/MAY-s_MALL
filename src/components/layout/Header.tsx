@@ -4,10 +4,12 @@ import { UserMenu } from "./UserMenu";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-[#f2eeeb]/80 backdrop-blur-md">
       <div className="page-container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">MAY{"'"}s Mall</span>
+          <span className="font-[family-name:var(--font-display)] text-2xl text-stone-800">
+            MAY{"'"}s Mall
+          </span>
         </Link>
 
         <nav className="flex items-center gap-6">

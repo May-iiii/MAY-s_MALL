@@ -22,9 +22,9 @@ export function UserMenu() {
       <NavLink href="/orders" activeMatch="/orders">
         我的订单
       </NavLink>
-      <span className="text-sm font-medium text-text-primary">
+      <NavLink href="/profile">
         {user.name}
-      </span>
+      </NavLink>
       <button
         onClick={() => logout()}
         className="text-sm text-text-muted hover:text-danger transition-colors"
