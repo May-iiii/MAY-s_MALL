@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 
 type Category = { id: string; name: string };
 type Product = {
@@ -59,6 +58,21 @@ export default function AdminProductsPage() {
       fetchProducts(page, search, categoryId);
     } else {
       alert("删除失败，请重试");
+    }
+  };
+
+  const handleToggle = async (id: string, field: "isPublished" | "isFeatured", value: boolean) => {
+    const res = await fetch(`/api/admin/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (res.ok) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+      );
+    } else {
+      alert("操作失败");
     }
   };
 
@@ -119,7 +133,22 @@ export default function AdminProductsPage() {
                 <td className="px-5 py-3.5 text-right text-stone-700">{formatPrice(p.price)}</td>
                 <td className={`px-5 py-3.5 text-right ${p.stock === 0 ? "text-red-600" : "text-stone-700"}`}>{p.stock}</td>
                 <td className="px-5 py-3.5 text-center">
-                  {p.isPublished ? <Badge variant="success">已发布</Badge> : <Badge variant="warning">草稿</Badge>}
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => handleToggle(p.id, "isPublished", !p.isPublished)}
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${p.isPublished ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-stone-100 text-stone-400 hover:bg-stone-200"}`}
+                      title={p.isPublished ? "点击下架" : "点击上架"}
+                    >
+                      {p.isPublished ? "上架" : "草稿"}
+                    </button>
+                    <button
+                      onClick={() => handleToggle(p.id, "isFeatured", !p.isFeatured)}
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${p.isFeatured ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-50 text-stone-300 hover:bg-stone-100"}`}
+                      title={p.isFeatured ? "取消精选" : "设为精选"}
+                    >
+                      {p.isFeatured ? "★" : "☆"}
+                    </button>
+                  </div>
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <div className="flex justify-end gap-2">

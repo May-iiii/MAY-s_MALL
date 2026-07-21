@@ -57,6 +57,29 @@ export async function PUT(
   }
 }
 
+// PATCH — 快速切换上下架/精选状态
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    await requireAdmin();
+    const { id } = await params;
+    const body = await request.json();
+    const data: Record<string, boolean> = {};
+    if (typeof body.isPublished === "boolean") data.isPublished = body.isPublished;
+    if (typeof body.isFeatured === "boolean") data.isFeatured = body.isFeatured;
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "无有效字段" }, { status: 400 });
+    }
+    const product = await prisma.product.update({ where: { id }, data });
+    return NextResponse.json({ product });
+  } catch (e) {
+    if (e instanceof Error && e.message === "Unauthorized") return NextResponse.json({ error: "无权限" }, { status: 403 });
+    return NextResponse.json({ error: "操作失败" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },

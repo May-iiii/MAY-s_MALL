@@ -33,6 +33,8 @@ export default function CartPage() {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [addressError, setAddressError] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -87,11 +89,26 @@ export default function CartPage() {
     }
   };
 
-  const handleSubmitOrder = async () => {
-    if (!address.trim() || !phone.trim()) {
-      setError("请填写收货地址和联系电话");
-      return;
+  const validateForm = (): boolean => {
+    let valid = true;
+    setAddressError("");
+    setPhoneError("");
+    if (!address.trim() || address.trim().length < 5) {
+      setAddressError("请输入完整的收货地址（至少5个字）");
+      valid = false;
     }
+    if (!phone.trim()) {
+      setPhoneError("请输入联系电话");
+      valid = false;
+    } else if (!/^1[3-9]\d{9}$/.test(phone.trim())) {
+      setPhoneError("请输入有效的手机号");
+      valid = false;
+    }
+    return valid;
+  };
+
+  const handleSubmitOrder = async () => {
+    if (!validateForm()) return;
 
     setSubmitting(true);
     setError("");
@@ -234,20 +251,26 @@ export default function CartPage() {
               {/* 收货信息 */}
               <div className="space-y-3 border-t border-border pt-4">
                 <p className="text-sm font-medium text-text-primary">收货信息</p>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="收货地址"
-                  className="input-field"
-                />
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="联系电话"
-                  className="input-field"
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => { setAddress(e.target.value); setAddressError(""); }}
+                    placeholder="收货地址"
+                    className={`input-field ${addressError ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`}
+                  />
+                  {addressError && <p className="mt-1 text-xs text-red-500">{addressError}</p>}
+                </div>
+                <div>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => { setPhone(e.target.value); setPhoneError(""); }}
+                    placeholder="手机号"
+                    className={`input-field ${phoneError ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`}
+                  />
+                  {phoneError && <p className="mt-1 text-xs text-red-500">{phoneError}</p>}
+                </div>
                 <input
                   type="text"
                   value={note}

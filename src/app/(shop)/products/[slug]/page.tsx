@@ -79,6 +79,14 @@ export default async function ProductDetailPage({ params }: Props) {
     canReview = !!purchased && !reviewed;
   }
 
+  // 同类推荐：取同分类其他商品（最多4件）
+  const relatedProducts = await prisma.product.findMany({
+    where: { categoryId: product.categoryId, isPublished: true, id: { not: product.id } },
+    select: { id: true, name: true, slug: true, price: true, image: true },
+    take: 4,
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <div className="page-container py-8">
       {/* 面包屑 */}
@@ -238,6 +246,42 @@ export default async function ProductDetailPage({ params }: Props) {
           <p className="mt-6 text-sm text-text-muted">暂无评价</p>
         )}
       </section>
+
+      {/* 同类推荐 */}
+      {relatedProducts.length > 0 && (
+        <section className="mt-16 border-t border-border pt-12">
+          <h2 className="text-xl font-bold text-text-primary">相关推荐</h2>
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {relatedProducts.map((rp) => (
+              <Link
+                key={rp.id}
+                href={`/products/${rp.slug}`}
+                className="group rounded-xl border border-border bg-white p-3 transition-all hover:shadow-md"
+              >
+                <div className="aspect-square overflow-hidden rounded-lg bg-surface-secondary">
+                  {rp.image ? (
+                    <img
+                      src={rp.image}
+                      alt={rp.name}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-text-muted">
+                      暂无图片
+                    </div>
+                  )}
+                </div>
+                <p className="mt-2 truncate text-sm font-medium text-stone-800">
+                  {rp.name}
+                </p>
+                <p className="mt-1 text-sm font-bold text-danger">
+                  {formatPrice(rp.price)}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

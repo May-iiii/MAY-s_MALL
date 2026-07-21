@@ -7,6 +7,7 @@ import {
   ProductsIcon,
   OrdersIcon,
   CategoriesIcon,
+  UsersIcon,
 } from "./icons";
 
 type Props = { email: string };
@@ -16,6 +17,7 @@ const links = [
   { href: "/admin/products", label: "商品管理", Icon: ProductsIcon },
   { href: "/admin/orders", label: "订单管理", Icon: OrdersIcon },
   { href: "/admin/categories", label: "分类管理", Icon: CategoriesIcon },
+  { href: "/admin/users", label: "用户管理", Icon: UsersIcon },
 ];
 
 export function AdminSidebar({ email }: Props) {
