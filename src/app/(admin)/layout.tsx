@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/layout/Header";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -17,12 +16,9 @@ export default async function AdminLayout({
   if (!user || user.role !== "ADMIN") redirect("/login");
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <div className="flex flex-1">
-        <AdminSidebar email={user.email} />
-        <main className="flex-1 bg-surface-secondary p-6 lg:p-8">{children}</main>
-      </div>
+    <div className="flex min-h-screen bg-stone-100">
+      <AdminSidebar email={user.email} />
+      <main className="flex-1 overflow-x-hidden p-6 lg:p-10">{children}</main>
     </div>
   );
 }

@@ -9,6 +9,54 @@ export const metadata: Metadata = {
   description: "发现精选好物，享受品质生活。",
 };
 
+function CategoryIcon(slug: string) {
+  const iconClass = "h-10 w-10";
+  switch (slug) {
+    case "electronics":
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <path d="M8 21h8M12 17v4" />
+        </svg>
+      );
+    case "clothing":
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M6 4l4 4h1l1-4 1 4h1l4-4-2 6v11H8V10L6 4z" />
+        </svg>
+      );
+    case "home-living":
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M3 9l9-6 9 6v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path d="M9 21V13h6v8" />
+        </svg>
+      );
+    case "food-drinks":
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M17 8h1a4 4 0 010 8h-1" />
+          <path d="M3 8h14v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+          <path d="M7 1v3M10 1v3M13 1v3" />
+        </svg>
+      );
+    case "books-stationery":
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+          <path d="M6.5 17a2.5 2.5 0 000 5H20V2H6.5A2.5 2.5 0 004 4.5v15z" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </svg>
+      );
+  }
+}
+
 export default async function HomePage() {
   const [featuredProducts, categories] = await Promise.all([
     import("@/lib/prisma").then(async ({ prisma }) =>
@@ -72,27 +120,21 @@ export default async function HomePage() {
             <p className="mt-3 text-stone-500">找到属于你的那一类</p>
           </div>
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {categories.map((cat, i) => {
-              const palettes = [
-                "from-amber-100/80 via-orange-50/60 to-yellow-50/40",
-                "from-emerald-100/80 via-green-50/60 to-teal-50/40",
-                "from-blue-100/80 via-indigo-50/60 to-sky-50/40",
-                "from-rose-100/80 via-pink-50/60 to-red-50/40",
-                "from-violet-100/80 via-purple-50/60 to-fuchsia-50/40",
-              ];
-              const icons = ["👗", "📱", "🏠", "🍜", "📚"];
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/products?category=${cat.slug}`}
-                  className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${palettes[i % palettes.length]} p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
-                >
-                  <span className="text-3xl">{icons[i % icons.length]}</span>
-                  <p className="mt-4 text-lg font-bold text-stone-800">{cat.name}</p>
-                  <p className="mt-1 text-sm text-stone-500">{cat.productCount} 件商品</p>
-                </Link>
-              );
-            })}
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/products?category=${cat.slug}`}
+                className="group flex flex-col items-center gap-4 rounded-2xl border border-stone-200 bg-white px-4 py-8 transition-all duration-300 hover:border-stone-300 hover:bg-stone-50/80 hover:shadow-md active:bg-stone-100"
+              >
+                <span className="text-stone-400 transition-colors duration-300 group-hover:text-accent">
+                  {CategoryIcon(cat.slug)}
+                </span>
+                <div className="text-center">
+                  <p className="text-base font-semibold text-stone-800">{cat.name}</p>
+                  <p className="mt-1 text-sm text-stone-400">{cat.productCount} 件商品</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
       )}

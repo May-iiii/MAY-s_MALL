@@ -1,7 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { formatPrice } from "@/lib/utils";
+import { ORDER_STATUS } from "@/lib/constants";
+import type { OrderStatusKey } from "@/lib/constants";
+import { Badge } from "@/components/ui/Badge";
+import {
+  ProductsIcon,
+  OrdersIcon,
+  CategoriesIcon,
+  RevenueIcon,
+  UsersIcon,
+  ArrowRightIcon,
+} from "@/components/admin/icons";
+
+const STATUS_BADGE: Record<string, "success" | "warning" | "danger" | "info" | "default"> = {
+  PENDING: "warning",
+  PAID: "info",
+  SHIPPED: "info",
+  DELIVERED: "success",
+  CANCELLED: "danger",
+};
 
 export default async function AdminDashboard() {
   const user = await getCurrentUser();
@@ -24,76 +44,101 @@ export default async function AdminDashboard() {
     where: { status: { in: ["PAID", "SHIPPED", "DELIVERED"] } },
   });
 
+  const stats = [
+    { label: "总销售额", value: formatPrice(totalRevenue._sum.totalAmount || 0), Icon: RevenueIcon, accent: "text-amber-600 bg-amber-50" },
+    { label: "商品总数", value: productCount, Icon: ProductsIcon, accent: "text-stone-700 bg-stone-100" },
+    { label: "订单总数", value: orderCount, Icon: OrdersIcon, accent: "text-stone-700 bg-stone-100" },
+    { label: "用户总数", value: userCount, Icon: UsersIcon, accent: "text-stone-700 bg-stone-100" },
+  ];
+
+  const shortcuts = [
+    { href: "/admin/products", title: "商品管理", desc: "上下架、编辑库存与价格", Icon: ProductsIcon },
+    { href: "/admin/orders", title: "订单管理", desc: "查看订单、流转状态", Icon: OrdersIcon },
+    { href: "/admin/categories", title: "分类管理", desc: "维护商品分类", Icon: CategoriesIcon },
+  ];
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-text-primary">概览</h1>
+    <div className="mx-auto max-w-6xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">概览</h1>
+        <p className="mt-1 text-sm text-stone-500">商城运营数据一览</p>
+      </div>
+
+      {/* 统计卡 */}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ label, value, Icon, accent }) => (
+          <div
+            key={label}
+            className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"
+          >
+            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${accent}`}>
+              <Icon className="h-5 w-5" />
+            </div>
+            <p className="mt-4 text-sm text-stone-500">{label}</p>
+            <p className="mt-1 text-2xl font-bold tracking-tight text-stone-900">{value}</p>
+          </div>
+        ))}
+      </div>
 
       {/* 快捷入口 */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <a href="/admin/products" className="card flex items-center gap-4 py-5 transition-shadow hover:shadow-md">
-          <span className="text-3xl">📦</span>
-          <div>
-            <p className="font-bold text-text-primary">商品管理</p>
-            <p className="text-sm text-text-muted">管理商品、上下架、库存</p>
-          </div>
-        </a>
-        <a href="/admin/orders" className="card flex items-center gap-4 py-5 transition-shadow hover:shadow-md">
-          <span className="text-3xl">📋</span>
-          <div>
-            <p className="font-bold text-text-primary">订单管理</p>
-            <p className="text-sm text-text-muted">查看订单、修改状态</p>
-          </div>
-        </a>
-        <a href="/admin/categories" className="card flex items-center gap-4 py-5 transition-shadow hover:shadow-md">
-          <span className="text-3xl">🏷️</span>
-          <div>
-            <p className="font-bold text-text-primary">分类管理</p>
-            <p className="text-sm text-text-muted">管理商品分类</p>
-          </div>
-        </a>
+        {shortcuts.map(({ href, title, desc, Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-stone-300 hover:shadow-md"
+          >
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-stone-100 text-stone-700 transition-colors group-hover:bg-amber-50 group-hover:text-amber-600">
+              <Icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-stone-900">{title}</p>
+              <p className="truncate text-sm text-stone-500">{desc}</p>
+            </div>
+            <ArrowRightIcon className="h-4 w-4 shrink-0 text-stone-300 transition-all group-hover:translate-x-0.5 group-hover:text-stone-500" />
+          </Link>
+        ))}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card">
-          <p className="text-sm text-text-muted">商品总数</p>
-          <p className="mt-2 text-3xl font-bold">{productCount}</p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-text-muted">订单总数</p>
-          <p className="mt-2 text-3xl font-bold">{orderCount}</p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-text-muted">用户总数</p>
-          <p className="mt-2 text-3xl font-bold">{userCount}</p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-text-muted">总销售额</p>
-          <p className="mt-2 text-3xl font-bold text-success">
-            {formatPrice(totalRevenue._sum.totalAmount || 0)}
-          </p>
-        </div>
+      {/* 最近订单 */}
+      <div className="mt-8 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-stone-900">最近订单</h2>
+        <Link
+          href="/admin/orders"
+          className="inline-flex items-center gap-1 text-sm font-medium text-stone-500 transition-colors hover:text-amber-600"
+        >
+          查看全部
+          <ArrowRightIcon className="h-3.5 w-3.5" />
+        </Link>
       </div>
-
-      <h2 className="mt-8 text-lg font-bold text-text-primary">最近订单</h2>
-      <div className="mt-4 card overflow-hidden p-0">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-surface-secondary">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">订单号</th>
-              <th className="px-4 py-3 text-left font-medium">用户</th>
-              <th className="px-4 py-3 text-left font-medium">金额</th>
-              <th className="px-4 py-3 text-left font-medium">状态</th>
+          <thead>
+            <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wider text-stone-400">
+              <th className="px-5 py-3 font-medium">订单号</th>
+              <th className="px-5 py-3 font-medium">用户</th>
+              <th className="px-5 py-3 text-right font-medium">金额</th>
+              <th className="px-5 py-3 text-center font-medium">状态</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-stone-100">
             {recentOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-surface-secondary/50">
-                <td className="px-4 py-3">{order.orderNumber}</td>
-                <td className="px-4 py-3">{order.user.name}</td>
-                <td className="px-4 py-3">{formatPrice(order.totalAmount)}</td>
-                <td className="px-4 py-3">{order.status}</td>
+              <tr key={order.id} className="transition-colors hover:bg-stone-50">
+                <td className="px-5 py-3.5 font-mono text-xs text-stone-600">{order.orderNumber}</td>
+                <td className="px-5 py-3.5 text-stone-700">{order.user.name}</td>
+                <td className="px-5 py-3.5 text-right font-medium text-stone-900">{formatPrice(order.totalAmount)}</td>
+                <td className="px-5 py-3.5 text-center">
+                  <Badge variant={STATUS_BADGE[order.status] || "default"}>
+                    {ORDER_STATUS[order.status as OrderStatusKey]?.label || order.status}
+                  </Badge>
+                </td>
               </tr>
             ))}
+            {recentOrders.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-5 py-12 text-center text-stone-400">暂无订单</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -26,9 +26,9 @@ export function ProductSearch() {
   }, 300);
 
   return (
-    <div className="relative w-full max-w-md">
+    <div className="relative w-full">
       <svg
-        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+        className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -48,7 +48,7 @@ export function ProductSearch() {
           handleSearch(e.target.value);
         }}
         placeholder="搜索商品..."
-        className="input-field pl-10"
+        className="input-field pr-10"
       />
     </div>
   );

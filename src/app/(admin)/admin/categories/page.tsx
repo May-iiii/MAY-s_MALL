@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/Button";
 
 type Category = {
   id: string;
@@ -61,40 +60,45 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-text-primary">分类管理</h1>
+    <div className="mx-auto max-w-4xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">分类管理</h1>
+        <p className="mt-1 text-sm text-stone-500">维护商品分类</p>
+      </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-      <form onSubmit={handleCreate} className="mt-6 card flex flex-wrap items-end gap-3">
-        <div className="flex-1 min-w-[200px]">
-          <label className="text-sm font-medium">名称</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="input-field mt-1" placeholder="分类名称" required />
+      <form onSubmit={handleCreate} className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="min-w-[200px] flex-1">
+          <label className="text-sm font-medium text-stone-700">名称</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} className="input-field mt-1.5" placeholder="分类名称" required />
         </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="text-sm font-medium">描述</label>
-          <input value={description} onChange={(e) => setDescription(e.target.value)} className="input-field mt-1" placeholder="可选" />
+        <div className="min-w-[200px] flex-1">
+          <label className="text-sm font-medium text-stone-700">描述</label>
+          <input value={description} onChange={(e) => setDescription(e.target.value)} className="input-field mt-1.5" placeholder="可选" />
         </div>
-        <Button type="submit">添加</Button>
+        <button type="submit" className="rounded-xl bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-stone-700">
+          添加
+        </button>
       </form>
 
-      <div className="mt-6 card overflow-hidden p-0">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-surface-secondary">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">名称</th>
-              <th className="px-4 py-3 text-left font-medium">Slug</th>
-              <th className="px-4 py-3 text-center font-medium">商品数</th>
-              <th className="px-4 py-3 text-right font-medium">操作</th>
+          <thead>
+            <tr className="border-b border-stone-200 text-xs uppercase tracking-wider text-stone-400">
+              <th className="px-5 py-3 text-left font-medium">名称</th>
+              <th className="px-5 py-3 text-left font-medium">Slug</th>
+              <th className="px-5 py-3 text-center font-medium">商品数</th>
+              <th className="px-5 py-3 text-right font-medium">操作</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-stone-100">
             {categories.map((c) => (
-              <tr key={c.id} className="hover:bg-surface-secondary/50">
-                <td className="px-4 py-3 font-medium">{c.name}</td>
-                <td className="px-4 py-3 text-text-muted">{c.slug}</td>
-                <td className="px-4 py-3 text-center">{c._count.products}</td>
-                <td className="px-4 py-3 text-right">
+              <tr key={c.id} className="transition-colors hover:bg-stone-50">
+                <td className="px-5 py-3.5 font-medium text-stone-900">{c.name}</td>
+                <td className="px-5 py-3.5 font-mono text-xs text-stone-500">{c.slug}</td>
+                <td className="px-5 py-3.5 text-center text-stone-700">{c._count.products}</td>
+                <td className="px-5 py-3.5 text-right">
                   <button
                     onClick={() => handleDelete(c.id, c.name)}
                     disabled={c._count.products > 0}
@@ -108,7 +112,7 @@ export default function AdminCategoriesPage() {
             ))}
             {categories.length === 0 && !loading && (
               <tr>
-                <td colSpan={4} className="px-4 py-12 text-center text-text-muted">
+                <td colSpan={4} className="px-5 py-16 text-center text-stone-400">
                   暂无分类
                 </td>
               </tr>

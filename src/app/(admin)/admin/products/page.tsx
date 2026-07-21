@@ -63,13 +63,24 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">商品管理</h1>
-        <Link href="/admin/products/new" className="btn-primary">新增商品</Link>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900">商品管理</h1>
+          <p className="mt-1 text-sm text-stone-500">管理商品、上下架与库存</p>
+        </div>
+        <Link
+          href="/admin/products/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-stone-700"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+          </svg>
+          新增商品
+        </Link>
       </div>
 
-      <form onSubmit={handleSearch} className="mt-4 flex gap-2">
+      <form onSubmit={handleSearch} className="mt-6 flex gap-2">
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索商品名称..." className="input-field max-w-xs" />
         <Button type="submit" variant="outline">搜索</Button>
@@ -77,40 +88,40 @@ export default function AdminProductsPage() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button onClick={() => { setCategoryId(""); setPage(1); fetchProducts(1, search, ""); }}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${!categoryId ? "bg-primary text-white" : "bg-surface-secondary text-text-secondary hover:bg-surface"}`}>
+          className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${!categoryId ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"}`}>
           全部分类
         </button>
         {categories.map((c) => (
           <button key={c.id} onClick={() => { setCategoryId(c.id); setPage(1); fetchProducts(1, search, c.id); }}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${categoryId === c.id ? "bg-primary text-white" : "bg-surface-secondary text-text-secondary hover:bg-surface"}`}>
+            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${categoryId === c.id ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"}`}>
             {c.name}
           </button>
         ))}
       </div>
 
-      <div className="mt-6 card overflow-hidden p-0">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-surface-secondary">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">名称</th>
-              <th className="px-4 py-3 text-left font-medium">分类</th>
-              <th className="px-4 py-3 text-right font-medium">价格</th>
-              <th className="px-4 py-3 text-right font-medium">库存</th>
-              <th className="px-4 py-3 text-center font-medium">状态</th>
-              <th className="px-4 py-3 text-right font-medium">操作</th>
+          <thead>
+            <tr className="border-b border-stone-200 text-xs uppercase tracking-wider text-stone-400">
+              <th className="px-5 py-3 text-left font-medium">名称</th>
+              <th className="px-5 py-3 text-left font-medium">分类</th>
+              <th className="px-5 py-3 text-right font-medium">价格</th>
+              <th className="px-5 py-3 text-right font-medium">库存</th>
+              <th className="px-5 py-3 text-center font-medium">状态</th>
+              <th className="px-5 py-3 text-right font-medium">操作</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-stone-100">
             {products.map((p) => (
-              <tr key={p.id} className="hover:bg-surface-secondary/50">
-                <td className="px-4 py-3 font-medium">{p.name}</td>
-                <td className="px-4 py-3 text-text-muted">{p.category?.name}</td>
-                <td className="px-4 py-3 text-right">{formatPrice(p.price)}</td>
-                <td className="px-4 py-3 text-right">{p.stock}</td>
-                <td className="px-4 py-3 text-center">
+              <tr key={p.id} className="transition-colors hover:bg-stone-50">
+                <td className="px-5 py-3.5 font-medium text-stone-900">{p.name}</td>
+                <td className="px-5 py-3.5 text-stone-500">{p.category?.name}</td>
+                <td className="px-5 py-3.5 text-right text-stone-700">{formatPrice(p.price)}</td>
+                <td className={`px-5 py-3.5 text-right ${p.stock === 0 ? "text-red-600" : "text-stone-700"}`}>{p.stock}</td>
+                <td className="px-5 py-3.5 text-center">
                   {p.isPublished ? <Badge variant="success">已发布</Badge> : <Badge variant="warning">草稿</Badge>}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-5 py-3.5 text-right">
                   <div className="flex justify-end gap-2">
                     <Link href={`/admin/products/${p.id}`} className="btn-outline btn-sm">编辑</Link>
                     <button onClick={() => handleDelete(p.id, p.name)} className="btn-danger btn-sm">删除</button>
@@ -119,17 +130,17 @@ export default function AdminProductsPage() {
               </tr>
             ))}
             {products.length === 0 && !loading && (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-text-muted">暂无商品</td></tr>
+              <tr><td colSpan={6} className="px-5 py-16 text-center text-stone-400">暂无商品</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
+        <div className="mt-5 flex justify-center gap-1.5">
           {Array.from({ length: totalPages }, (_, i) => (
             <button key={i} onClick={() => setPage(i + 1)}
-              className={`rounded px-3 py-1 text-sm ${page === i + 1 ? "bg-primary text-white" : "hover:bg-surface-secondary"}`}>
+              className={`h-9 min-w-9 rounded-lg px-3 text-sm font-medium transition-colors ${page === i + 1 ? "bg-stone-900 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"}`}>
               {i + 1}
             </button>
           ))}
