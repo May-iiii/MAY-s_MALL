@@ -7,6 +7,7 @@ import { useAuth } from "@/providers/SessionProvider";
 import { formatPrice } from "@/lib/utils";
 import { getMembershipDiscount } from "@/lib/membership";
 import { Button } from "@/components/ui/Button";
+import { notifyCartUpdated } from "@/components/layout/CartBadge";
 
 type CartItem = {
   id: string;
@@ -71,6 +72,7 @@ export default function CartPage() {
           item.id === itemId ? { ...item, quantity } : item,
         ),
       );
+      notifyCartUpdated();
     } else {
       const data = await res.json();
       setError(data.error || "操作失败");
@@ -81,6 +83,7 @@ export default function CartPage() {
     const res = await fetch(`/api/cart/${itemId}`, { method: "DELETE" });
     if (res.ok) {
       setItems((prev) => prev.filter((item) => item.id !== itemId));
+      notifyCartUpdated();
     }
   };
 

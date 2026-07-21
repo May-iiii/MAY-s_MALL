@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/SessionProvider";
 import { Button } from "@/components/ui/Button";
+import { notifyCartUpdated } from "@/components/layout/CartBadge";
 
 type Props = {
   productId: string;
@@ -45,6 +46,7 @@ export function AddToCartButton({
 
         if (res.ok) {
           setAdded(true);
+          notifyCartUpdated();
           setTimeout(() => setAdded(false), 2000);
         }
       } finally {
@@ -74,6 +76,7 @@ export function AddToCartButton({
         });
       }
       localStorage.setItem("may-cart", JSON.stringify(cart));
+      notifyCartUpdated();
       setLoading(false);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);

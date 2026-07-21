@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NavLink } from "./NavLink";
 import { UserMenu } from "./UserMenu";
+import { CartBadge } from "./CartBadge";
 
 export function Header() {
   return (
@@ -16,7 +17,7 @@ export function Header() {
           <NavLink href="/products" activeMatch="/products">
             商品
           </NavLink>
-          <NavLink href="/cart">购物车</NavLink>
+          <CartBadge />
           <UserMenu />
         </nav>
       </div>

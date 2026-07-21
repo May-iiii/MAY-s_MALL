@@ -7,8 +7,10 @@ import { parseJson } from "@/lib/utils";
 import { getCurrentUser } from "@/lib/auth";
 import { getMembershipDiscount } from "@/lib/membership";
 import { MEMBERSHIP_TIERS, type MembershipTierKey } from "@/lib/constants";
+import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/Badge";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
+import { ReviewForm } from "@/components/shop/ReviewForm";
 import type { Metadata } from "next";
 
 const getCachedProduct = cache(getProductBySlug);
@@ -55,6 +57,27 @@ export default async function ProductDetailPage({ params }: Props) {
   const tierLabel = currentUser
     ? MEMBERSHIP_TIERS[currentUser.membershipTier as MembershipTierKey]?.label
     : null;
+
+  // 评价资格：已收货且未评价过
+  let canReview = false;
+  if (currentUser) {
+    const [purchased, reviewed] = await Promise.all([
+      prisma.orderItem.findFirst({
+        where: {
+          productId: product.id,
+          order: { userId: currentUser.id, status: "DELIVERED" },
+        },
+        select: { id: true },
+      }),
+      prisma.review.findUnique({
+        where: {
+          userId_productId: { userId: currentUser.id, productId: product.id },
+        },
+        select: { id: true },
+      }),
+    ]);
+    canReview = !!purchased && !reviewed;
+  }
 
   return (
     <div className="page-container py-8">
@@ -179,11 +202,18 @@ export default async function ProductDetailPage({ params }: Props) {
       </div>
 
       {/* 商品评价 */}
-      {product.reviews.length > 0 && (
-        <section className="mt-16 border-t border-border pt-12">
-          <h2 className="text-xl font-bold text-text-primary">
-            商品评价 ({product.reviews.length})
-          </h2>
+      <section className="mt-16 border-t border-border pt-12">
+        <h2 className="text-xl font-bold text-text-primary">
+          商品评价 ({product.reviews.length})
+        </h2>
+
+        {canReview && (
+          <div className="mt-6 max-w-xl">
+            <ReviewForm productId={product.id} />
+          </div>
+        )}
+
+        {product.reviews.length > 0 ? (
           <div className="mt-6 space-y-6">
             {product.reviews.map((review) => (
               <div key={review.id} className="border-b border-border pb-6">
@@ -204,8 +234,10 @@ export default async function ProductDetailPage({ params }: Props) {
               </div>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="mt-6 text-sm text-text-muted">暂无评价</p>
+        )}
+      </section>
     </div>
   );
 }

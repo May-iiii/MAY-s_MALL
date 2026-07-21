@@ -62,6 +62,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         });
       }
       localStorage.removeItem("may-cart");
+      window.dispatchEvent(new Event("cart-updated"));
     } catch {
       // 合并失败不阻断登录，保留 localStorage 待下次
     }
@@ -114,6 +115,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
+    window.dispatchEvent(new Event("cart-updated"));
     router.push("/login");
   }, [router]);
 

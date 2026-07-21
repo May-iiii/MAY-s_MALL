@@ -17,6 +17,11 @@ export default function AdminCategoriesPage() {
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
 
+  // 行内编辑状态
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+
   const fetchCategories = async () => {
     setLoading(true);
     const res = await fetch("/api/admin/categories");
@@ -45,6 +50,36 @@ export default function AdminCategoriesPage() {
     } else {
       const d = await res.json();
       setError(d.error || "创建失败");
+    }
+  };
+
+  const startEdit = (c: Category) => {
+    setEditingId(c.id);
+    setEditName(c.name);
+    setEditDescription(c.description || "");
+    setError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName("");
+    setEditDescription("");
+  };
+
+  const handleUpdate = async (id: string) => {
+    setError("");
+    if (!editName.trim()) return setError("请输入分类名称");
+    const res = await fetch(`/api/admin/categories/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editName, description: editDescription }),
+    });
+    if (res.ok) {
+      cancelEdit();
+      fetchCategories();
+    } else {
+      const d = await res.json();
+      setError(d.error || "更新失败");
     }
   };
 
@@ -95,19 +130,67 @@ export default function AdminCategoriesPage() {
           <tbody className="divide-y divide-stone-100">
             {categories.map((c) => (
               <tr key={c.id} className="transition-colors hover:bg-stone-50">
-                <td className="px-5 py-3.5 font-medium text-stone-900">{c.name}</td>
-                <td className="px-5 py-3.5 font-mono text-xs text-stone-500">{c.slug}</td>
-                <td className="px-5 py-3.5 text-center text-stone-700">{c._count.products}</td>
-                <td className="px-5 py-3.5 text-right">
-                  <button
-                    onClick={() => handleDelete(c.id, c.name)}
-                    disabled={c._count.products > 0}
-                    className="btn-danger btn-sm disabled:opacity-30"
-                    title={c._count.products > 0 ? "有商品时不能删除" : ""}
-                  >
-                    删除
-                  </button>
-                </td>
+                {editingId === c.id ? (
+                  <>
+                    <td className="px-5 py-3" colSpan={2}>
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="input-field max-w-[160px]"
+                          placeholder="名称"
+                        />
+                        <input
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          className="input-field max-w-[220px]"
+                          placeholder="描述（可选）"
+                        />
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-center text-stone-700">{c._count.products}</td>
+                    <td className="px-5 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleUpdate(c.id)}
+                          className="rounded-lg bg-stone-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-stone-700"
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="rounded-lg px-3 py-1 text-xs font-medium text-stone-500 ring-1 ring-stone-200 transition-colors hover:bg-stone-50"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-5 py-3.5 font-medium text-stone-900">{c.name}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs text-stone-500">{c.slug}</td>
+                    <td className="px-5 py-3.5 text-center text-stone-700">{c._count.products}</td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => startEdit(c)}
+                          className="rounded-lg px-3 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-200 transition-colors hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          编辑
+                        </button>
+                        <button
+                          onClick={() => handleDelete(c.id, c.name)}
+                          disabled={c._count.products > 0}
+                          className="btn-danger btn-sm disabled:opacity-30"
+                          title={c._count.products > 0 ? "有商品时不能删除" : ""}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
             {categories.length === 0 && !loading && (

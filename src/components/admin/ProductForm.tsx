@@ -31,6 +31,7 @@ export function ProductForm({ initialData, onSubmit, submitLabel }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<ProductData>({ ...defaults, ...initialData });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -42,6 +43,26 @@ export function ProductForm({ initialData, onSubmit, submitLabel }: Props) {
 
   const set = (key: keyof ProductData, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleUpload = async (file: File) => {
+    setError("");
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        set("image", data.url);
+      } else {
+        setError(data.error || "上传失败");
+      }
+    } catch {
+      setError("上传失败，请重试");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,9 +104,46 @@ export function ProductForm({ initialData, onSubmit, submitLabel }: Props) {
           <label className="text-sm font-medium">库存</label>
           <input type="number" value={form.stock} onChange={(e) => set("stock", e.target.value)} className="input-field mt-1" />
         </div>
-        <div>
-          <label className="text-sm font-medium">图片URL</label>
-          <input value={form.image} onChange={(e) => set("image", e.target.value)} className="input-field mt-1" placeholder="https://..." />
+        <div className="sm:col-span-2">
+          <label className="text-sm font-medium">商品图片</label>
+          <div className="mt-1 flex items-start gap-3">
+            {form.image ? (
+              <img
+                src={form.image}
+                alt="预览"
+                className="h-16 w-16 flex-shrink-0 rounded-lg border border-border object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-xs text-text-muted">
+                无图
+              </div>
+            )}
+            <div className="flex-1 space-y-2">
+              <input
+                value={form.image}
+                onChange={(e) => set("image", e.target.value)}
+                className="input-field"
+                placeholder="图片 URL 或点击下方上传"
+              />
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-200">
+                  {uploading ? "上传中…" : "上传图片"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                <span className="text-xs text-text-muted">JPG/PNG/WebP/GIF，≤5MB</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div>
