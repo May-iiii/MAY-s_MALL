@@ -10,6 +10,7 @@ type User = {
   role: string;
   membershipTier: string;
   totalSpent: number;
+  createdAt?: string;
 } | null;
 
 type AuthContextValue = {
@@ -37,23 +38,56 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  // 登录/注册成功后，将游客期写入 localStorage 的购物车合并到服务端
+  const mergeGuestCart = useCallback(async () => {
+    let guestCart: Array<{ productId: string; quantity: number }>;
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data.user);
-        return {};
-      }
-      return { error: data.error || "登录失败" };
+      guestCart = JSON.parse(localStorage.getItem("may-cart") || "[]");
     } catch {
-      return { error: "网络错误，请稍后重试" };
+      guestCart = [];
+    }
+    if (!Array.isArray(guestCart) || guestCart.length === 0) return;
+
+    try {
+      // POST /api/cart 已是 upsert/increment，逐项合并即可
+      for (const item of guestCart) {
+        if (!item?.productId || !item?.quantity) continue;
+        await fetch("/api/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: item.productId,
+            quantity: item.quantity,
+          }),
+        });
+      }
+      localStorage.removeItem("may-cart");
+    } catch {
+      // 合并失败不阻断登录，保留 localStorage 待下次
     }
   }, []);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data.user);
+          await mergeGuestCart();
+          return {};
+        }
+        return { error: data.error || "登录失败" };
+      } catch {
+        return { error: "网络错误，请稍后重试" };
+      }
+    },
+    [mergeGuestCart],
+  );
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
@@ -66,6 +100,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         if (res.ok) {
           setUser(data.user);
+          await mergeGuestCart();
           return {};
         }
         return { error: data.error || "注册失败" };
@@ -73,7 +108,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return { error: "网络错误，请稍后重试" };
       }
     },
-    [],
+    [mergeGuestCart],
   );
 
   const logout = useCallback(async () => {

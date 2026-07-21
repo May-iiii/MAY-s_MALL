@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
 import { calculateOrderAmount } from "@/lib/membership";
+import { parseBody } from "@/lib/parse-body";
+import { createOrderSchema } from "@/lib/validations";
 
 // GET /api/orders — 我的订单列表
 export async function GET() {
@@ -34,19 +36,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "请先登录" }, { status: 401 });
   }
 
+  const parsed = await parseBody(request, createOrderSchema);
+  if (!parsed.success) return parsed.response;
+  const address = parsed.data.address.trim();
+  const phone = parsed.data.phone.trim();
+  const note = parsed.data.note?.trim() || null;
+
   try {
-    const body = await request.json();
-    const address = String(body.address || "").trim();
-    const phone = String(body.phone || "").trim();
-    const note = body.note ? String(body.note).trim() : null;
-
-    if (!address || !phone) {
-      return NextResponse.json(
-        { error: "请填写收货地址和联系电话" },
-        { status: 400 },
-      );
-    }
-
     // 在事务中完成：读取购物车 → 校验库存 → 创建订单 → 扣库存 → 清购物车
     const order = await prisma.$transaction(async (tx) => {
       // 1. 获取购物车

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { parseBody } from "@/lib/parse-body";
+import { categorySchema } from "@/lib/validations";
 
 export async function GET() {
   try {
@@ -20,11 +22,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
-    const body = await request.json();
-    const name = (body.name || "").trim();
-    if (!name) return NextResponse.json({ error: "请输入分类名称" }, { status: 400 });
+    const parsed = await parseBody(request, categorySchema);
+    if (!parsed.success) return parsed.response;
+    const { name, description, image } = parsed.data;
     const category = await prisma.category.create({
-      data: { name, slug: slugify(name), description: body.description || null, image: body.image || null },
+      data: { name, slug: slugify(name), description: description || null, image: image || null },
     });
     return NextResponse.json({ category }, { status: 201 });
   } catch (e) {

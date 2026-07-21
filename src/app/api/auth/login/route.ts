@@ -2,16 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, setSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { loginSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const email = (body.email || "").toLowerCase().trim();
-    const { password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "请输入邮箱和密码" }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "参数校验失败";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
+    const email = parsed.data.email.toLowerCase().trim();
+    const { password } = parsed.data;
 
     // IP + 邮箱双维度限流：每分钟最多 5 次尝试
     const ip = request.headers.get("x-forwarded-for") || "unknown";

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/SessionProvider";
 import { formatPrice } from "@/lib/utils";
+import { getMembershipDiscount } from "@/lib/membership";
 import { Button } from "@/components/ui/Button";
 
 type CartItem = {
@@ -113,12 +114,18 @@ export default function CartPage() {
     }
   };
 
-  const totalAmount = items.reduce(
+  const originalAmount = items.reduce(
     (sum, item) =>
       sum + item.product.price * Math.min(item.quantity, item.product.stock),
     0,
   );
   const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // 会员折扣：口径与 lib/membership.ts 的 calculateOrderAmount 保持一致
+  const discountRate = getMembershipDiscount(user?.membershipTier ?? "FREE");
+  const payAmount =
+    Math.round(originalAmount * (1 - discountRate) * 100) / 100;
+  const discountAmount = Math.round((originalAmount - payAmount) * 100) / 100;
 
   if (authLoading || loading) {
     return (
@@ -209,6 +216,16 @@ export default function CartPage() {
                   <span className="text-text-secondary">商品数量</span>
                   <span className="text-text-primary">{totalCount} 件</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-text-secondary">商品总额</span>
+                  <span className="text-text-primary">{formatPrice(originalAmount)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-text-secondary">会员折扣</span>
+                    <span className="text-success">−{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
               </div>
 
               {/* 收货信息 */}
@@ -239,7 +256,7 @@ export default function CartPage() {
 
               <div className="flex justify-between border-t border-border pt-2">
                 <span className="text-lg font-bold text-text-primary">合计</span>
-                <span className="text-lg font-bold text-danger">{formatPrice(totalAmount)}</span>
+                <span className="text-lg font-bold text-danger">{formatPrice(payAmount)}</span>
               </div>
 
               <Button onClick={handleSubmitOrder} disabled={submitting} className="w-full" size="lg">

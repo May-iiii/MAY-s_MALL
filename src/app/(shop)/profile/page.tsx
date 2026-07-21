@@ -60,9 +60,9 @@ export default async function ProfilePage() {
             <span className={`badge text-sm px-3 py-1 ${tier?.color || ""}`}>
               {tier?.label || user.membershipTier}
             </span>
-            {tier?.discountRate > 0 && (
+            {tier && tier.discountRate > 0 && (
               <span className="text-sm text-text-secondary">
-                享 {Math.round(tier.discountRate * 100) / 10} 折优惠
+                享 {(1 - tier.discountRate) * 10} 折优惠
               </span>
             )}
           </div>

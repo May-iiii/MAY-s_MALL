@@ -2,30 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, setSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { registerSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const name = (body.name || "").trim();
-    const email = (body.email || "").toLowerCase().trim();
-    const password = body.password || "";
-
-    // 校验
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "请填写所有字段" }, { status: 400 });
+    const body = await request.json().catch(() => null);
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message || "参数校验失败";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
-
-    if (password.length < 8) {
-      return NextResponse.json({ error: "密码至少 8 位" }, { status: 400 });
-    }
-
-    // 密码需包含字母和数字
-    if (!/^(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
-      return NextResponse.json(
-        { error: "密码需包含字母和数字" },
-        { status: 400 },
-      );
-    }
+    const name = parsed.data.name.trim();
+    const email = parsed.data.email.toLowerCase().trim();
+    const password = parsed.data.password;
 
     // IP 限流：每分钟最多注册 3 次
     const ip = request.headers.get("x-forwarded-for") || "unknown";

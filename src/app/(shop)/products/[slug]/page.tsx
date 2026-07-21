@@ -4,6 +4,9 @@ import { cache } from "react";
 import { getProductBySlug } from "@/lib/products";
 import { formatPrice } from "@/lib/utils";
 import { parseJson } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/auth";
+import { getMembershipDiscount } from "@/lib/membership";
+import { MEMBERSHIP_TIERS, type MembershipTierKey } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import type { Metadata } from "next";
@@ -39,6 +42,19 @@ export default async function ProductDetailPage({ params }: Props) {
     : [];
   const mainImage = product.image || (images.length > 0 ? images[0] : null);
   const hasComparePrice = product.comparePrice != null && product.comparePrice > product.price;
+
+  // 会员价：登录用户按其等级折扣展示专属价
+  const currentUser = await getCurrentUser();
+  const discountRate = currentUser
+    ? getMembershipDiscount(currentUser.membershipTier)
+    : 0;
+  const memberPrice =
+    discountRate > 0
+      ? Math.round(product.price * (1 - discountRate) * 100) / 100
+      : null;
+  const tierLabel = currentUser
+    ? MEMBERSHIP_TIERS[currentUser.membershipTier as MembershipTierKey]?.label
+    : null;
 
   return (
     <div className="page-container py-8">
@@ -127,6 +143,16 @@ export default async function ProductDetailPage({ params }: Props) {
               </>
             )}
           </div>
+
+          {memberPrice != null && (
+            <div className="mt-2 flex items-center gap-2 text-sm">
+              <Badge variant="warning">{tierLabel}</Badge>
+              <span className="text-text-secondary">
+                会员价 <span className="font-semibold text-accent">{formatPrice(memberPrice)}</span>
+                <span className="ml-1 text-text-muted">（{(1 - discountRate) * 10} 折，结算时自动抵扣）</span>
+              </span>
+            </div>
+          )}
 
           <div className="mt-6 space-y-4 border-t border-border pt-6">
             <p className="text-sm leading-relaxed text-text-secondary">

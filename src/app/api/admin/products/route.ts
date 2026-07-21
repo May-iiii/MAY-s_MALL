@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { parseBody } from "@/lib/parse-body";
+import { productSchema } from "@/lib/validations";
 
 // GET — 商品列表
 export async function GET(request: NextRequest) {
@@ -44,26 +46,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
-    const body = await request.json();
-    const name = String(body.name || "").trim();
-    const description = String(body.description || "").trim();
-    const price = body.price !== undefined && body.price !== null ? Number(body.price) : null;
-    const categoryId = body.categoryId ? String(body.categoryId) : "";
-
-    if (!name || !description || price === null || !categoryId) {
-      return NextResponse.json({ error: "请填写必填字段" }, { status: 400 });
-    }
+    const parsed = await parseBody(request, productSchema);
+    if (!parsed.success) return parsed.response;
+    const d = parsed.data;
 
     const product = await prisma.product.create({
       data: {
-        name, slug: slugify(name), description, price,
-        comparePrice: body.comparePrice ? Number(body.comparePrice) : null,
-        stock: Number(body.stock || 0),
-        image: body.image || null,
-        images: body.images || "[]",
-        isFeatured: !!body.isFeatured,
-        isPublished: !!body.isPublished,
-        categoryId,
+        name: d.name,
+        slug: slugify(d.name),
+        description: d.description,
+        price: d.price,
+        comparePrice: d.comparePrice ?? null,
+        stock: d.stock,
+        image: d.image || null,
+        images: d.images || "[]",
+        isFeatured: d.isFeatured,
+        isPublished: d.isPublished,
+        categoryId: d.categoryId,
       },
       include: { category: { select: { name: true } } },
     });

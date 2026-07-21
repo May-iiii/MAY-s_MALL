@@ -95,6 +95,7 @@ export async function getCurrentUser() {
       role: true,
       membershipTier: true,
       totalSpent: true,
+      createdAt: true,
     },
   });
 
