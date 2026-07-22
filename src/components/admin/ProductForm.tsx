@@ -84,7 +84,7 @@ export function ProductForm({ initialData, onSubmit, submitLabel }: Props) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="text-sm font-medium">名称 *</label>
-          <input value={form.name} onChange={(e) => set("name", e.target.value)} className="input-field mt-1" required />
+          <input value={form.name} onChange={(e) => set("name", e.target.value)} className="input-field mt-1" required maxLength={100} />
         </div>
         <div>
           <label className="text-sm font-medium">分类 *</label>

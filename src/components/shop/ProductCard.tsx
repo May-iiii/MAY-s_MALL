@@ -38,7 +38,7 @@ export function ProductCard({
         </div>
         <div className="p-5">
           <p className="text-xs font-medium text-text-muted">{category}</p>
-          <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold text-text-primary leading-snug">
+          <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold text-text-primary leading-snug min-h-[2.75em]">
             {name}
           </h3>
           <div className="mt-3 flex items-baseline gap-2">

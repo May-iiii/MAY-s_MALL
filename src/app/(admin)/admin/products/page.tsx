@@ -69,7 +69,12 @@ export default function AdminProductsPage() {
     });
     if (res.ok) {
       setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+        prev.map((p) => {
+          if (p.id !== id) return p;
+          // 下架时同步取消精选
+          if (field === "isPublished" && !value) return { ...p, isPublished: false, isFeatured: false };
+          return { ...p, [field]: value };
+        }),
       );
     } else {
       alert("操作失败");

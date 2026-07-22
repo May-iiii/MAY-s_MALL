@@ -68,7 +68,11 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
     const data: Record<string, boolean> = {};
-    if (typeof body.isPublished === "boolean") data.isPublished = body.isPublished;
+    if (typeof body.isPublished === "boolean") {
+      data.isPublished = body.isPublished;
+      // 下架时自动取消精选
+      if (!body.isPublished) data.isFeatured = false;
+    }
     if (typeof body.isFeatured === "boolean") data.isFeatured = body.isFeatured;
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "无有效字段" }, { status: 400 });
