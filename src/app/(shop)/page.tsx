@@ -67,7 +67,7 @@ export default async function HomePage() {
           image: true, stock: true,
           category: { select: { name: true, slug: true } },
         },
-        take: 6,
+        take: 12,
         orderBy: { createdAt: "desc" },
       }),
     ),
@@ -119,7 +119,7 @@ export default async function HomePage() {
             </h2>
             <p className="mt-3 text-stone-500">找到属于你的那一类</p>
           </div>
-          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3">
             {categories.map((cat) => (
               <Link
                 key={cat.id}

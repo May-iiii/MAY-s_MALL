@@ -37,7 +37,15 @@ export async function PUT(
       return NextResponse.json({ error: "购物车项不存在" }, { status: 404 });
     }
 
-    if (quantity > cartItem.product.stock) {
+    // 库存是商品级共享的：同一商品可能因规格不同拆成多行，需汇总该商品其它规格行的数量再比较
+    const otherSpecsQuantity = await prisma.cartItem
+      .findMany({
+        where: { userId: user.id, productId: cartItem.productId, NOT: { id } },
+        select: { quantity: true },
+      })
+      .then((rows) => rows.reduce((sum, r) => sum + r.quantity, 0));
+
+    if (otherSpecsQuantity + quantity > cartItem.product.stock) {
       return NextResponse.json(
         { error: `库存不足，当前库存 ${cartItem.product.stock} 件` },
         { status: 400 },

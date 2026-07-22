@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/providers/SessionProvider";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatSpecsDisplay } from "@/lib/utils";
 import { getMembershipDiscount } from "@/lib/membership";
 import { Button } from "@/components/ui/Button";
 import { notifyCartUpdated } from "@/components/layout/CartBadge";
@@ -12,6 +12,7 @@ import { notifyCartUpdated } from "@/components/layout/CartBadge";
 type CartItem = {
   id: string;
   quantity: number;
+  specs?: string;
   product: {
     id: string;
     name: string;
@@ -19,6 +20,7 @@ type CartItem = {
     price: number;
     image: string | null;
     stock: number;
+    specs?: string;
   };
 };
 
@@ -29,12 +31,6 @@ export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-  const [note, setNote] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [addressError, setAddressError] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -86,51 +82,6 @@ export default function CartPage() {
     if (res.ok) {
       setItems((prev) => prev.filter((item) => item.id !== itemId));
       notifyCartUpdated();
-    }
-  };
-
-  const validateForm = (): boolean => {
-    let valid = true;
-    setAddressError("");
-    setPhoneError("");
-    if (!address.trim() || address.trim().length < 5) {
-      setAddressError("请输入完整的收货地址（至少5个字）");
-      valid = false;
-    }
-    if (!phone.trim()) {
-      setPhoneError("请输入联系电话");
-      valid = false;
-    } else if (!/^1[3-9]\d{9}$/.test(phone.trim())) {
-      setPhoneError("请输入有效的手机号");
-      valid = false;
-    }
-    return valid;
-  };
-
-  const handleSubmitOrder = async () => {
-    if (!validateForm()) return;
-
-    setSubmitting(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, phone, note: note || undefined }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        router.push(`/orders/${data.order.id}`);
-      } else {
-        setError(data.error || "提交订单失败");
-      }
-    } catch {
-      setError("网络错误");
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -204,6 +155,9 @@ export default function CartPage() {
                       className="font-medium text-text-primary hover:text-primary">
                       {item.product.name}
                     </Link>
+                    {item.specs && item.specs !== "{}" && (
+                      <p className="mt-0.5 text-xs text-stone-400">{formatSpecsDisplay(item.specs)}</p>
+                    )}
                     <p className="mt-1 text-sm text-danger">{formatPrice(item.product.price)}</p>
                   </div>
                   <div className="flex items-center justify-between">
@@ -227,7 +181,7 @@ export default function CartPage() {
             ))}
           </div>
 
-          {/* 汇总 + 下单 */}
+          {/* 汇总 + 去结算 */}
           <div className="lg:col-span-1">
             <div className="card sticky top-20 space-y-4">
               <h3 className="text-lg font-bold text-text-primary">订单摘要</h3>
@@ -248,45 +202,13 @@ export default function CartPage() {
                 )}
               </div>
 
-              {/* 收货信息 */}
-              <div className="space-y-3 border-t border-border pt-4">
-                <p className="text-sm font-medium text-text-primary">收货信息</p>
-                <div>
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => { setAddress(e.target.value); setAddressError(""); }}
-                    placeholder="收货地址"
-                    className={`input-field ${addressError ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`}
-                  />
-                  {addressError && <p className="mt-1 text-xs text-red-500">{addressError}</p>}
-                </div>
-                <div>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => { setPhone(e.target.value); setPhoneError(""); }}
-                    placeholder="手机号"
-                    className={`input-field ${phoneError ? "border-red-400 focus:border-red-500 focus:ring-red-500" : ""}`}
-                  />
-                  {phoneError && <p className="mt-1 text-xs text-red-500">{phoneError}</p>}
-                </div>
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="备注（选填）"
-                  className="input-field"
-                />
-              </div>
-
               <div className="flex justify-between border-t border-border pt-2">
                 <span className="text-lg font-bold text-text-primary">合计</span>
                 <span className="text-lg font-bold text-danger">{formatPrice(payAmount)}</span>
               </div>
 
-              <Button onClick={handleSubmitOrder} disabled={submitting} className="w-full" size="lg">
-                {submitting ? "提交中..." : "提交订单"}
+              <Button onClick={() => router.push("/checkout")} className="w-full" size="lg">
+                去结算
               </Button>
             </div>
           </div>

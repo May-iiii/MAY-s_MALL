@@ -8,15 +8,17 @@ export function formatPrice(price: number): string {
   return `¥${price.toFixed(2)}`;
 }
 
-// 生成 slug
+// 生成 slug（保留中文等 Unicode 字母，避免纯中文商品名被过滤成空字符串）
 export function slugify(text: string): string {
-  return text
+  const base = text
     .toString()
-    .toLowerCase()
     .trim()
+    .toLowerCase()
     .replace(/\s+/g, "-")
-    .replace(/[^\w-]+/g, "")
-    .replace(/--+/g, "-");
+    .replace(/[^\p{L}\p{N}_-]+/gu, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return base || Math.random().toString(36).slice(2, 10);
 }
 
 // 生成订单号：ORD-年月日-4位随机
@@ -36,4 +38,25 @@ export function parseJson<T>(str: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+// 规范化规格 JSON — 按 key 排序保证同一规格不同顺序得相同字符串（用于唯一约束）
+export function normalizeSpecs(specs: Record<string, string>): string {
+  const sorted = Object.keys(specs)
+    .sort()
+    .reduce<Record<string, string>>((acc, k) => {
+      if (specs[k]) acc[k] = specs[k];
+      return acc;
+    }, {});
+  return JSON.stringify(sorted);
+}
+
+// 将购物车/订单项存储的 specs JSON 转为展示文案，如 "颜色:黑 · 尺码:M"
+export function formatSpecsDisplay(specsJson: string | null | undefined): string {
+  if (!specsJson || specsJson === "{}") return "";
+  const obj = parseJson<Record<string, string>>(specsJson, {});
+  return Object.entries(obj)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(" · ");
 }

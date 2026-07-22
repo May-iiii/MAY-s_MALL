@@ -21,6 +21,7 @@ export default function EditProductPage() {
           name: p.name, description: p.description,
           price: String(p.price), comparePrice: p.comparePrice ? String(p.comparePrice) : "",
           stock: String(p.stock), image: p.image || "",
+          specs: p.specs || "",
           isFeatured: p.isFeatured, isPublished: p.isPublished, categoryId: p.categoryId,
         });
       })

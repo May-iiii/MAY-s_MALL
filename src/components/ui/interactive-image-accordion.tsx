@@ -7,31 +7,31 @@ const accordionItems = [
     id: 1,
     title: "时尚服饰",
     imageUrl:
-      "https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=760&auto=format&fit=crop",
   },
   {
     id: 2,
     title: "数码好物",
     imageUrl:
-      "https://images.unsplash.com/photo-1468495244123-6c6c332eeece?q=80&w=2021&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1468495244123-6c6c332eeece?q=80&w=760&auto=format&fit=crop",
   },
   {
     id: 3,
     title: "家居生活",
     imageUrl:
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2158&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=760&auto=format&fit=crop",
   },
   {
     id: 4,
     title: "美食饮品",
     imageUrl:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=760&auto=format&fit=crop",
   },
   {
     id: 5,
     title: "图书文创",
     imageUrl:
-      "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1973&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=760&auto=format&fit=crop",
   },
 ];
 
@@ -44,6 +44,8 @@ const AccordionItem = ({
   isActive: boolean;
   onMouseEnter: () => void;
 }) => {
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <div
       className={`relative h-[420px] cursor-pointer overflow-hidden rounded-2xl shadow-lg transition-all duration-700 ease-in-out ${
@@ -51,10 +53,17 @@ const AccordionItem = ({
       }`}
       onMouseEnter={onMouseEnter}
     >
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-surface-secondary" />
+      )}
       <img
         src={item.imageUrl}
         alt={item.title}
-        className="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
         onError={(e) => {
           (e.target as HTMLImageElement).onerror = null;
           (e.target as HTMLImageElement).src =

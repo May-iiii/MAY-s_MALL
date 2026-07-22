@@ -29,6 +29,15 @@ describe("slugify", () => {
   it("合并连续连字符", () => {
     expect(slugify("a   b")).toBe("a-b");
   });
+
+  it("纯中文商品名保留中文字符，不返回空字符串", () => {
+    const slug = slugify("马登美式复古山系凉感伞兵裤黑色轻量化薄户外休闲阔腿长裤子男夏");
+    expect(slug).toBe("马登美式复古山系凉感伞兵裤黑色轻量化薄户外休闲阔腿长裤子男夏");
+  });
+
+  it("纯符号名兜底生成非空 slug", () => {
+    expect(slugify("！！！")).not.toBe("");
+  });
 });
 
 describe("generateOrderNumber", () => {

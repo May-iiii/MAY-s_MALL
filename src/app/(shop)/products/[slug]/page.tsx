@@ -9,9 +9,31 @@ import { getMembershipDiscount } from "@/lib/membership";
 import { MEMBERSHIP_TIERS, type MembershipTierKey } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/Badge";
-import { AddToCartButton } from "@/components/shop/AddToCartButton";
+import { SpecSelectors } from "@/components/shop/SpecSelectors";
 import { ReviewForm } from "@/components/shop/ReviewForm";
 import type { Metadata } from "next";
+
+// 解析规格文本：每行格式 "名称:选项1,选项2"
+function parseSpecsText(specsStr: string): { name: string; options: string[] }[] {
+  try {
+    return specsStr
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.includes(":"))
+      .map((line) => {
+        const [name, ...rest] = line.split(":");
+        const options = rest
+          .join(":")
+          .split(/[,，]/)
+          .map((o) => o.trim())
+          .filter(Boolean);
+        return { name: name.trim(), options };
+      })
+      .filter((s) => s.name && s.options.length > 0);
+  } catch {
+    return [];
+  }
+}
 
 const getCachedProduct = cache(getProductBySlug);
 
@@ -19,9 +41,19 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+// Next.js 对含非 ASCII 字符的动态路由 segment，在部分渲染路径下可能仍是
+// percent-encoded 原始值（而非解码后的文本），这里显式兜底解码一次。
+function decodeSlugParam(raw: string): string {
+  try {
+    return /%[0-9A-Fa-f]{2}/.test(raw) ? decodeURIComponent(raw) : raw;
+  } catch {
+    return raw;
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getCachedProduct(slug);
+  const product = await getCachedProduct(decodeSlugParam(slug));
 
   if (!product) return { title: "商品未找到" };
 
@@ -33,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params;
-  const product = await getCachedProduct(slug);
+  const product = await getCachedProduct(decodeSlugParam(slug));
 
   if (!product) {
     notFound();
@@ -198,12 +230,13 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
 
           <div className="mt-8">
-            <AddToCartButton
+            <SpecSelectors
               productId={product.id}
               productName={product.name}
               productPrice={product.price}
               productImage={mainImage}
               stock={product.stock}
+              specs={parseSpecsText(product.specs || "")}
             />
           </div>
         </div>

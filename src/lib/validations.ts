@@ -31,6 +31,7 @@ export const productSchema = z.object({
   stock: z.coerce.number().int().min(0, "库存不能为负"),
   image: z.string().optional(),
   images: z.string().optional(),
+  specs: z.string().optional(),
   isFeatured: z.boolean().default(false),
   isPublished: z.boolean().default(true),
   categoryId: z.string().min(1, "请选择分类"),
@@ -41,6 +42,14 @@ export const createOrderSchema = z.object({
   address: z.string().min(1, "请输入收货地址"),
   phone: z.string().min(1, "请输入联系电话"),
   note: z.string().max(500).optional(),
+  // 立刻购买：跳过购物车，只结算单个商品（不落 CartItem）
+  buyNow: z
+    .object({
+      productId: z.string().min(1),
+      quantity: z.coerce.number().int().positive(),
+      specs: z.string().optional(),
+    })
+    .optional(),
 });
 
 // --- 评论 ---

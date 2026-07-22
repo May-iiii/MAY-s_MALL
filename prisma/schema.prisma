@@ -48,6 +48,7 @@ model Product {
   images      String    @default("[]")
   isFeatured  Boolean   @default(false)
   isPublished Boolean   @default(true)
+  specs       String    @default("")
   categoryId  String
   category    Category  @relation(fields: [categoryId], references: [id])
   createdAt   DateTime  @default(now())
@@ -61,6 +62,7 @@ model Product {
 model CartItem {
   id        String   @id @default(cuid())
   quantity  Int      @default(1)
+  specs     String   @default("{}")
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId String
@@ -68,7 +70,7 @@ model CartItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, productId])
+  @@unique([userId, productId, specs])
 }
 
 model Order {
@@ -95,6 +97,7 @@ model OrderItem {
   id        String   @id @default(cuid())
   quantity  Int
   price     Float
+  specs     String   @default("{}")
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   orderId   String

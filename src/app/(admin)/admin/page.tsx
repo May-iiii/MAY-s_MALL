@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { formatPrice } from "@/lib/utils";
-import { ORDER_STATUS } from "@/lib/constants";
-import type { OrderStatusKey } from "@/lib/constants";
+import { ORDER_STATUS, MEMBERSHIP_TIERS } from "@/lib/constants";
+import type { OrderStatusKey, MembershipTierKey } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
+import { DashboardCharts } from "@/components/admin/charts/DashboardCharts";
 import {
   ProductsIcon,
   OrdersIcon,
@@ -23,26 +24,80 @@ const STATUS_BADGE: Record<string, "success" | "warning" | "danger" | "info" | "
   CANCELLED: "danger",
 };
 
+const TREND_DAYS = 30;
+
 export default async function AdminDashboard() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") redirect("/login");
 
-  const [productCount, orderCount, userCount, recentOrders] =
-    await Promise.all([
-      prisma.product.count(),
-      prisma.order.count(),
-      prisma.user.count(),
-      prisma.order.findMany({
-        take: 5,
-        orderBy: { createdAt: "desc" },
-        include: { user: { select: { name: true } } },
-      }),
-    ]);
+  const trendSince = new Date();
+  trendSince.setDate(trendSince.getDate() - (TREND_DAYS - 1));
+  trendSince.setHours(0, 0, 0, 0);
+
+  const [
+    productCount,
+    orderCount,
+    userCount,
+    recentOrders,
+    trendOrders,
+    statusGroups,
+    tierGroups,
+    categoriesWithCount,
+  ] = await Promise.all([
+    prisma.product.count(),
+    prisma.order.count(),
+    prisma.user.count(),
+    prisma.order.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { user: { select: { name: true } } },
+    }),
+    prisma.order.findMany({
+      where: {
+        status: { in: ["PAID", "SHIPPED", "DELIVERED"] },
+        createdAt: { gte: trendSince },
+      },
+      select: { createdAt: true, totalAmount: true },
+    }),
+    prisma.order.groupBy({ by: ["status"], _count: true }),
+    prisma.user.groupBy({ by: ["membershipTier"], _count: true }),
+    prisma.category.findMany({
+      select: { name: true, _count: { select: { products: true } } },
+    }),
+  ]);
 
   const totalRevenue = await prisma.order.aggregate({
     _sum: { totalAmount: true },
     where: { status: { in: ["PAID", "SHIPPED", "DELIVERED"] } },
   });
+
+  // 销售趋势：近 30 天按日汇总，空缺日补 0
+  const revenueByDate = new Map<string, number>();
+  for (const order of trendOrders) {
+    const key = order.createdAt.toISOString().slice(0, 10);
+    revenueByDate.set(key, (revenueByDate.get(key) || 0) + order.totalAmount);
+  }
+  const salesTrend = Array.from({ length: TREND_DAYS }, (_, i) => {
+    const d = new Date(trendSince);
+    d.setDate(d.getDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    return { date: key.slice(5), amount: Math.round((revenueByDate.get(key) || 0) * 100) / 100 };
+  });
+
+  const statusDist = statusGroups.map((g) => ({
+    label: ORDER_STATUS[g.status as OrderStatusKey]?.label || g.status,
+    count: g._count,
+  }));
+
+  const tierDist = tierGroups.map((g) => ({
+    label: MEMBERSHIP_TIERS[g.membershipTier as MembershipTierKey]?.label || g.membershipTier,
+    count: g._count,
+  }));
+
+  const categoryCounts = categoriesWithCount.map((c) => ({
+    name: c.name,
+    count: c._count.products,
+  }));
 
   const stats = [
     { label: "总销售额", value: formatPrice(totalRevenue._sum.totalAmount || 0), Icon: RevenueIcon, accent: "text-amber-600 bg-amber-50" },
@@ -99,6 +154,14 @@ export default async function AdminDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* 数据可视化 */}
+      <DashboardCharts
+        salesTrend={salesTrend}
+        statusDist={statusDist}
+        tierDist={tierDist}
+        categoryCounts={categoryCounts}
+      />
 
       {/* 最近订单 */}
       <div className="mt-8 flex items-center justify-between">

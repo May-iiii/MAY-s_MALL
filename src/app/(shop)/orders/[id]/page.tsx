@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatSpecsDisplay } from "@/lib/utils";
 import { ORDER_STATUS, MEMBERSHIP_TIERS } from "@/lib/constants";
 import { PayButton } from "@/components/shop/PayButton";
 import type { OrderStatusKey, MembershipTierKey } from "@/lib/constants";
@@ -73,6 +73,9 @@ export default async function OrderDetailPage({ params }: Props) {
                   className="font-medium text-text-primary hover:text-primary">
                   {item.product.name}
                 </Link>
+                {item.specs && item.specs !== "{}" && (
+                  <p className="text-xs text-stone-400">{formatSpecsDisplay(item.specs)}</p>
+                )}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-text-secondary">{formatPrice(item.price)} × {item.quantity}</span>
                   <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>

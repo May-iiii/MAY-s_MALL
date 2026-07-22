@@ -40,7 +40,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // 登录/注册成功后，将游客期写入 localStorage 的购物车合并到服务端
   const mergeGuestCart = useCallback(async () => {
-    let guestCart: Array<{ productId: string; quantity: number }>;
+    let guestCart: Array<{ productId: string; quantity: number; specs?: string }>;
     try {
       guestCart = JSON.parse(localStorage.getItem("may-cart") || "[]");
     } catch {
@@ -58,6 +58,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({
             productId: item.productId,
             quantity: item.quantity,
+            specs: item.specs || "{}",
           }),
         });
       }

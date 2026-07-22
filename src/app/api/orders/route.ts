@@ -41,8 +41,69 @@ export async function POST(request: NextRequest) {
   const address = parsed.data.address.trim();
   const phone = parsed.data.phone.trim();
   const note = parsed.data.note?.trim() || null;
+  const buyNow = parsed.data.buyNow;
 
   try {
+    // 立刻购买：不读购物车、不清购物车，只结算这一件
+    if (buyNow) {
+      const order = await prisma.$transaction(async (tx) => {
+        const product = await tx.product.findUnique({
+          where: { id: buyNow.productId, isPublished: true },
+          select: { id: true, price: true, stock: true, name: true },
+        });
+
+        if (!product) {
+          throw new Error("商品不存在");
+        }
+        if (buyNow.quantity > product.stock) {
+          throw new Error(
+            `库存不足：${product.name}（库存 ${product.stock}，需要 ${buyNow.quantity}）`,
+          );
+        }
+
+        const { originalAmount, discountAmount, totalAmount } =
+          calculateOrderAmount(
+            [{ price: product.price, quantity: buyNow.quantity }],
+            user.membershipTier,
+          );
+
+        const orderNumber = generateOrderNumber();
+        const newOrder = await tx.order.create({
+          data: {
+            orderNumber,
+            status: "PENDING",
+            originalAmount,
+            discountAmount,
+            totalAmount,
+            membershipTier: user.membershipTier,
+            address,
+            phone,
+            note,
+            userId: user.id,
+            items: {
+              create: [
+                {
+                  productId: product.id,
+                  quantity: buyNow.quantity,
+                  price: product.price,
+                  specs: buyNow.specs || "{}",
+                },
+              ],
+            },
+          },
+        });
+
+        await tx.product.update({
+          where: { id: product.id },
+          data: { stock: { decrement: buyNow.quantity } },
+        });
+
+        return newOrder;
+      });
+
+      return NextResponse.json({ order });
+    }
+
     // 在事务中完成：读取购物车 → 校验库存 → 创建订单 → 扣库存 → 清购物车
     const order = await prisma.$transaction(async (tx) => {
       // 1. 获取购物车
@@ -59,13 +120,24 @@ export async function POST(request: NextRequest) {
         throw new Error("购物车为空");
       }
 
-      // 2. 校验库存
-      const outOfStock: string[] = [];
+      // 2. 校验库存（同一商品可能因规格不同拆成多行，需按 productId 汇总后再比较）
+      const neededByProduct = new Map<string, { name: string; stock: number; quantity: number }>();
       for (const item of cartItems) {
-        if (item.quantity > item.product.stock) {
-          outOfStock.push(
-            `${item.product.name}（库存 ${item.product.stock}，需要 ${item.quantity}）`,
-          );
+        const entry = neededByProduct.get(item.productId);
+        if (entry) {
+          entry.quantity += item.quantity;
+        } else {
+          neededByProduct.set(item.productId, {
+            name: item.product.name,
+            stock: item.product.stock,
+            quantity: item.quantity,
+          });
+        }
+      }
+      const outOfStock: string[] = [];
+      for (const { name, stock, quantity } of neededByProduct.values()) {
+        if (quantity > stock) {
+          outOfStock.push(`${name}（库存 ${stock}，需要 ${quantity}）`);
         }
       }
       if (outOfStock.length > 0) {
@@ -101,16 +173,17 @@ export async function POST(request: NextRequest) {
               productId: item.productId,
               quantity: item.quantity,
               price: item.product.price,
+              specs: item.specs,
             })),
           },
         },
       });
 
-      // 5. 扣减库存
-      for (const item of cartItems) {
+      // 5. 扣减库存（按 productId 汇总后扣减，避免同商品多规格行重复查询）
+      for (const [productId, { quantity }] of neededByProduct) {
         await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
+          where: { id: productId },
+          data: { stock: { decrement: quantity } },
         });
       }
 
@@ -125,7 +198,9 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : "创建订单失败";
     // 事务内 throw 的业务错误返回 400
     const isBusinessError =
-      message.startsWith("库存不足") || message === "购物车为空";
+      message.startsWith("库存不足") ||
+      message === "购物车为空" ||
+      message === "商品不存在";
     return NextResponse.json(
       { error: message },
       { status: isBusinessError ? 400 : 500 },

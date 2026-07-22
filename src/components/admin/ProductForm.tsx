@@ -11,6 +11,7 @@ type ProductData = {
   comparePrice: string;
   stock: string;
   image: string;
+  specs: string;
   isFeatured: boolean;
   isPublished: boolean;
   categoryId: string;
@@ -24,7 +25,7 @@ type Props = {
 
 const defaults: ProductData = {
   name: "", description: "", price: "", comparePrice: "", stock: "0",
-  image: "", isFeatured: false, isPublished: true, categoryId: "",
+  image: "", specs: "", isFeatured: false, isPublished: true, categoryId: "",
 };
 
 export function ProductForm({ initialData, onSubmit, submitLabel }: Props) {
@@ -145,6 +146,17 @@ export function ProductForm({ initialData, onSubmit, submitLabel }: Props) {
             </div>
           </div>
         </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium">商品规格</label>
+        <textarea
+          value={form.specs}
+          onChange={(e) => set("specs", e.target.value)}
+          className="input-field mt-1"
+          rows={3}
+          placeholder={`颜色:黑色,白色&#10;尺码:S,M,L&#10;格式: 名称:选项1,选项2`}
+        />
+        <p className="mt-1 text-xs text-text-muted">每行一个规格：名称:选项1,选项2。留空表示无规格。</p>
       </div>
       <div>
         <label className="text-sm font-medium">描述 *</label>

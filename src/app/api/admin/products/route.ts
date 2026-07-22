@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
         stock: d.stock,
         image: d.image || null,
         images: d.images || "[]",
+        specs: d.specs || "",
         isFeatured: d.isFeatured,
         isPublished: d.isPublished,
         categoryId: d.categoryId,

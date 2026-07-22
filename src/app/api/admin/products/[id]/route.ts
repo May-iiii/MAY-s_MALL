@@ -44,6 +44,7 @@ export async function PUT(
         stock: Number(body.stock || 0),
         image: body.image || null,
         images: body.images || "[]",
+        specs: body.specs || "",
         isFeatured: !!body.isFeatured,
         isPublished: !!body.isPublished,
         categoryId,

@@ -20,6 +20,7 @@ export async function GET() {
           price: true,
           image: true,
           stock: true,
+          specs: true,
         },
       },
     },
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const productId = body.productId as string;
     const quantity = Math.max(1, parseInt(String(body.quantity || "1"), 10));
+    const specs = (typeof body.specs === "string" ? body.specs : "{}") || "{}";
 
     if (!productId) {
       return NextResponse.json({ error: "请提供商品ID" }, { status: 400 });
@@ -55,14 +57,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "商品不存在" }, { status: 404 });
     }
 
-    // 检查现有购物车项
+    // 检查同规格现有购物车项
     const existing = await prisma.cartItem.findUnique({
-      where: { userId_productId: { userId: user.id, productId } },
+      where: { userId_productId_specs: { userId: user.id, productId, specs } },
     });
 
     const newQuantity = existing ? existing.quantity + quantity : quantity;
 
-    if (newQuantity > product.stock) {
+    // 库存是商品级共享的：同一商品可能因规格不同拆成多行，需汇总该商品所有规格行的数量再比较
+    const sameProductItems = await prisma.cartItem.findMany({
+      where: { userId: user.id, productId },
+      select: { specs: true, quantity: true },
+    });
+    const otherSpecsQuantity = sameProductItems
+      .filter((i) => i.specs !== specs)
+      .reduce((sum, i) => sum + i.quantity, 0);
+
+    if (otherSpecsQuantity + newQuantity > product.stock) {
       return NextResponse.json(
         { error: `库存不足，当前库存 ${product.stock} 件` },
         { status: 400 },
@@ -71,12 +82,12 @@ export async function POST(request: NextRequest) {
 
     // upsert
     const cartItem = await prisma.cartItem.upsert({
-      where: { userId_productId: { userId: user.id, productId } },
-      create: { userId: user.id, productId, quantity },
+      where: { userId_productId_specs: { userId: user.id, productId, specs } },
+      create: { userId: user.id, productId, quantity, specs },
       update: { quantity: newQuantity },
       include: {
         product: {
-          select: { id: true, name: true, slug: true, price: true, image: true, stock: true },
+          select: { id: true, name: true, slug: true, price: true, image: true, stock: true, specs: true },
         },
       },
     });
