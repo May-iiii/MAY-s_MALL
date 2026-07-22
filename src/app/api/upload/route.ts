@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
 import { requireAdmin } from "@/lib/auth";
+import { supabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = new Set([
@@ -17,7 +16,7 @@ const EXT: Record<string, string> = {
   "image/gif": "gif",
 };
 
-// POST /api/upload — 管理员上传商品图片到 public/uploads
+// POST /api/upload — 管理员上传商品图片到 Supabase Storage
 export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
@@ -43,11 +42,19 @@ export async function POST(request: NextRequest) {
     // 时间戳 + 随机串，避免文件名冲突与路径穿越
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), buffer);
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .upload(filename, buffer, { contentType: file.type });
 
-    return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 });
+    if (uploadError) {
+      return NextResponse.json({ error: "上传失败" }, { status: 500 });
+    }
+
+    const { data } = supabaseAdmin.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filename);
+
+    return NextResponse.json({ url: data.publicUrl }, { status: 201 });
   } catch (e) {
     if (e instanceof Error && e.message === "Unauthorized") {
       return NextResponse.json({ error: "无权限" }, { status: 403 });
@@ -55,3 +62,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "上传失败" }, { status: 500 });
   }
 }
+
