@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
       .upload(filename, buffer, { contentType: file.type });
 
     if (uploadError) {
-      return NextResponse.json({ error: "上传失败" }, { status: 500 });
+      console.error("Supabase upload error:", JSON.stringify(uploadError));
+      return NextResponse.json({ error: `上传失败: ${uploadError.message}` }, { status: 500 });
     }
 
     const { data } = supabaseAdmin.storage
@@ -59,7 +60,9 @@ export async function POST(request: NextRequest) {
     if (e instanceof Error && e.message === "Unauthorized") {
       return NextResponse.json({ error: "无权限" }, { status: 403 });
     }
-    return NextResponse.json({ error: "上传失败" }, { status: 500 });
+    const msg = e instanceof Error ? e.message : "上传失败";
+    console.error("Upload catch error:", msg);
+    return NextResponse.json({ error: `上传失败: ${msg}` }, { status: 500 });
   }
 }
 
