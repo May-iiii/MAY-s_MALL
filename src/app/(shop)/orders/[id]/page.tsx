@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { formatPrice, formatSpecsDisplay } from "@/lib/utils";
@@ -61,9 +62,9 @@ export default async function OrderDetailPage({ params }: Props) {
           {order.items.map((item) => (
             <div key={item.id} className="card flex gap-4 p-4">
               <Link href={`/products/${item.product.slug}`}
-                className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface-secondary">
+                className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface-secondary">
                 {item.product.image ? (
-                  <img src={item.product.image} alt={item.product.name} className="h-full w-full object-cover" />
+                  <Image src={item.product.image} alt={item.product.name} fill className="object-cover" sizes="80px" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-xs text-text-muted">暂无</div>
                 )}

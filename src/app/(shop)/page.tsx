@@ -4,6 +4,8 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { LandingAccordionItem } from "@/components/ui/interactive-image-accordion";
 import type { Metadata } from "next";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "MAY's Mall - 精选好物",
   description: "发现精选好物，享受品质生活。",

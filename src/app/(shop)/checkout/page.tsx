@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/providers/SessionProvider";
 import { formatPrice, formatSpecsDisplay } from "@/lib/utils";
 import { getMembershipDiscount } from "@/lib/membership";
@@ -226,10 +227,10 @@ export default function CheckoutPage() {
           <div className="space-y-4 lg:col-span-2">
             {items.map((item) => (
               <div key={item.id} className="card flex gap-4 p-4">
-                <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface-secondary">
+                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface-secondary">
                   {item.product.image ? (
-                    <img src={item.product.image} alt={item.product.name}
-                      className="h-full w-full object-cover" />
+                    <Image src={item.product.image} alt={item.product.name}
+                      fill className="object-cover" sizes="80px" />
                   ) : (
                     <div className="flex h-full items-center justify-center text-xs text-text-muted">暂无</div>
                   )}

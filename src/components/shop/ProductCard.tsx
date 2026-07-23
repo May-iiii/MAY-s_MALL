@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 
 type ProductCardProps = {
@@ -13,13 +14,14 @@ export function ProductCard({
   return (
     <Link href={`/products/${slug}`} className="group block">
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-        <div className="aspect-[4/3] bg-surface-secondary overflow-hidden">
+        <div className="relative aspect-[4/3] bg-surface-secondary overflow-hidden">
           {image ? (
-            <img
+            <Image
               src={image}
               alt={name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-text-muted">

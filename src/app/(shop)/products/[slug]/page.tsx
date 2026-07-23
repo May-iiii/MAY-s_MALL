@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { cache } from "react";
 import { getProductBySlug } from "@/lib/products";
 import { formatPrice } from "@/lib/utils";
@@ -12,6 +13,8 @@ import { Badge } from "@/components/ui/Badge";
 import { SpecSelectors } from "@/components/shop/SpecSelectors";
 import { ReviewForm } from "@/components/shop/ReviewForm";
 import type { Metadata } from "next";
+
+export const revalidate = 120;
 
 // 解析规格文本：每行格式 "名称:选项1,选项2"
 function parseSpecsText(specsStr: string): { name: string; options: string[] }[] {
@@ -144,12 +147,15 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="grid gap-8 lg:grid-cols-2">
         {/* 图片区 */}
         <div className="space-y-4">
-          <div className="aspect-square overflow-hidden rounded-xl bg-surface-secondary">
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-surface-secondary">
             {mainImage ? (
-              <img
+              <Image
                 src={mainImage}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
               />
             ) : (
               <div className="flex h-full items-center justify-center text-text-muted">
@@ -169,9 +175,9 @@ export default async function ProductDetailPage({ params }: Props) {
               {images.map((img, idx) => (
                 <div
                   key={idx}
-                  className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-border"
+                  className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-border"
                 >
-                  <img src={img} alt="" className="h-full w-full object-cover" />
+                  <Image src={img} alt="" fill className="object-cover" sizes="64px" />
                 </div>
               ))}
             </div>
@@ -291,12 +297,14 @@ export default async function ProductDetailPage({ params }: Props) {
                 href={`/products/${rp.slug}`}
                 className="group rounded-xl border border-border bg-white p-3 transition-all hover:shadow-md"
               >
-                <div className="aspect-square overflow-hidden rounded-lg bg-surface-secondary">
+                <div className="relative aspect-square overflow-hidden rounded-lg bg-surface-secondary">
                   {rp.image ? (
-                    <img
+                    <Image
                       src={rp.image}
                       alt={rp.name}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-xs text-text-muted">

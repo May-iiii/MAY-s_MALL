@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/providers/SessionProvider";
 import { formatPrice, formatSpecsDisplay } from "@/lib/utils";
 import { getMembershipDiscount } from "@/lib/membership";
@@ -140,11 +141,11 @@ export default function CartPage() {
               <div key={item.id} className="card flex gap-4 p-4">
                 <Link
                   href={`/products/${item.product.slug}`}
-                  className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-surface-secondary"
+                  className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-surface-secondary"
                 >
                   {item.product.image ? (
-                    <img src={item.product.image} alt={item.product.name}
-                      className="h-full w-full object-cover" />
+                    <Image src={item.product.image} alt={item.product.name}
+                      fill className="object-cover" sizes="96px" />
                   ) : (
                     <div className="flex h-full items-center justify-center text-xs text-text-muted">暂无</div>
                   )}
