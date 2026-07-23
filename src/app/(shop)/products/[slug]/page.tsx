@@ -44,6 +44,15 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+// 构建时预渲染所有已上架商品详情页
+export async function generateStaticParams() {
+  const products = await prisma.product.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return products.map((p) => ({ slug: p.slug }));
+}
+
 // Next.js 对含非 ASCII 字符的动态路由 segment，在部分渲染路径下可能仍是
 // percent-encoded 原始值（而非解码后的文本），这里显式兜底解码一次。
 function decodeSlugParam(raw: string): string {
@@ -68,7 +77,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params;
-  const product = await getCachedProduct(decodeSlugParam(slug));
+
+  // 第 1 轮并行：商品 + 用户（互不依赖）
+  const [product, currentUser] = await Promise.all([
+    getCachedProduct(decodeSlugParam(slug)),
+    getCurrentUser().catch(() => null),
+  ]);
 
   if (!product) {
     notFound();
@@ -81,7 +95,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const hasComparePrice = product.comparePrice != null && product.comparePrice > product.price;
 
   // 会员价：登录用户按其等级折扣展示专属价
-  const currentUser = await getCurrentUser();
   const discountRate = currentUser
     ? getMembershipDiscount(currentUser.membershipTier)
     : 0;
@@ -93,34 +106,36 @@ export default async function ProductDetailPage({ params }: Props) {
     ? MEMBERSHIP_TIERS[currentUser.membershipTier as MembershipTierKey]?.label
     : null;
 
-  // 评价资格：已收货且未评价过
-  let canReview = false;
-  if (currentUser) {
-    const [purchased, reviewed] = await Promise.all([
-      prisma.orderItem.findFirst({
-        where: {
-          productId: product.id,
-          order: { userId: currentUser.id, status: "DELIVERED" },
-        },
-        select: { id: true },
-      }),
-      prisma.review.findUnique({
-        where: {
-          userId_productId: { userId: currentUser.id, productId: product.id },
-        },
-        select: { id: true },
-      }),
-    ]);
-    canReview = !!purchased && !reviewed;
-  }
+  // 第 2 轮并行：评价资格 + 同类推荐（都依赖 product，但互不依赖）
+  const [canReviewResult, relatedProducts] = await Promise.all([
+    currentUser
+      ? Promise.all([
+          prisma.orderItem.findFirst({
+            where: {
+              productId: product.id,
+              order: { userId: currentUser.id, status: "DELIVERED" },
+            },
+            select: { id: true },
+          }),
+          prisma.review.findUnique({
+            where: {
+              userId_productId: { userId: currentUser.id, productId: product.id },
+            },
+            select: { id: true },
+          }),
+        ])
+      : Promise.resolve([null, null]),
+    prisma.product.findMany({
+      where: { categoryId: product.categoryId, isPublished: true, id: { not: product.id } },
+      select: { id: true, name: true, slug: true, price: true, image: true },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
-  // 同类推荐：取同分类其他商品（最多4件）
-  const relatedProducts = await prisma.product.findMany({
-    where: { categoryId: product.categoryId, isPublished: true, id: { not: product.id } },
-    select: { id: true, name: true, slug: true, price: true, image: true },
-    take: 4,
-    orderBy: { createdAt: "desc" },
-  });
+  const canReview = canReviewResult
+    ? !!canReviewResult[0] && !canReviewResult[1]
+    : false;
 
   return (
     <div className="page-container py-8">

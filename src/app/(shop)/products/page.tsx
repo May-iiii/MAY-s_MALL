@@ -7,7 +7,7 @@ import { CategoryFilter } from "@/components/shop/CategoryFilter";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Metadata } from "next";
 
-export const revalidate = 30;
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "全部商品",
