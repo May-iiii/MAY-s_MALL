@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition, useState, useEffect } from "react";
 
 type Category = {
   id: string;
@@ -15,10 +15,17 @@ type Props = {
 };
 
 export function CategoryFilter({ categories }: Props) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const activeCategory = searchParams.get("category") || "";
+  const [isPending, startTransition] = useTransition();
+  const [optimisticCategory, setOptimisticCategory] = useState(searchParams.get("category") || "");
 
-  const buildUrl = (slug: string) => {
+  // 同步外部 URL 变化（浏览器前进/后退）
+  useEffect(() => {
+    setOptimisticCategory(searchParams.get("category") || "");
+  }, [searchParams]);
+
+  const handleClick = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (slug) {
       params.set("category", slug);
@@ -26,34 +33,47 @@ export function CategoryFilter({ categories }: Props) {
       params.delete("category");
     }
     params.delete("page");
-    return `/products?${params.toString()}`;
+    const url = `/products?${params.toString()}`;
+
+    // 立即更新高亮状态，不等待导航完成
+    setOptimisticCategory(slug);
+
+    startTransition(() => {
+      router.push(url);
+    });
   };
+
+  const activeCategory = optimisticCategory;
+
+  const baseClass =
+    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors";
+  const activeClass = "bg-primary text-white";
+  const inactiveClass =
+    "bg-surface-secondary text-text-secondary hover:bg-surface hover:text-primary";
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Link
-        href={buildUrl("")}
-        className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-          !activeCategory
-            ? "bg-primary text-white"
-            : "bg-surface-secondary text-text-secondary hover:bg-surface hover:text-primary"
+      <button
+        onClick={() => handleClick("")}
+        disabled={isPending}
+        className={`${baseClass} ${
+          !activeCategory ? activeClass : inactiveClass
         }`}
       >
         全部
-      </Link>
+      </button>
       {categories.map((cat) => (
-        <Link
+        <button
           key={cat.id}
-          href={buildUrl(cat.slug)}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-            activeCategory === cat.slug
-              ? "bg-primary text-white"
-              : "bg-surface-secondary text-text-secondary hover:bg-surface hover:text-primary"
+          onClick={() => handleClick(cat.slug)}
+          disabled={isPending}
+          className={`${baseClass} ${
+            activeCategory === cat.slug ? activeClass : inactiveClass
           }`}
         >
           {cat.name}
           <span className="ml-1 opacity-70">({cat.productCount})</span>
-        </Link>
+        </button>
       ))}
     </div>
   );
