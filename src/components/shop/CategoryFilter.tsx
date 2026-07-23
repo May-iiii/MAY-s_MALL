@@ -33,7 +33,8 @@ export function CategoryFilter({ categories }: Props) {
       params.delete("category");
     }
     params.delete("page");
-    const url = `/products?${params.toString()}`;
+    const query = params.toString();
+    const url = query ? `/products?${query}` : "/products";
 
     // 立即更新高亮状态，不等待导航完成
     setOptimisticCategory(slug);
